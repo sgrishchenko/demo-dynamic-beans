@@ -11,6 +11,8 @@ import org.springframework.scripting.groovy.GroovyScriptFactory;
 import org.springframework.scripting.support.RefreshableScriptTargetSource;
 import org.springframework.scripting.support.ResourceScriptSource;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Created by sigri on 10.08.2017.
  */
@@ -24,7 +26,8 @@ public class ScriptConfiguration {
         GroovyScriptFactory factory = new GroovyScriptFactory("classpath");
         ResourceScriptSource script = new ResourceScriptSource(resource);
 
-        RefreshableScriptTargetSource refreshableScript = new RefreshableScriptTargetSource(beanFactory, "groovyImplementation", factory, script, false) {
+        RefreshableScriptTargetSource refreshableScript = new RefreshableScriptTargetSource(
+                beanFactory, "groovyImplementation", factory, script, false) {
             @Override
             protected Object obtainFreshBean(BeanFactory beanFactory, String beanName) {
                 try {
@@ -34,7 +37,7 @@ public class ScriptConfiguration {
                 }
             }
         };
-        refreshableScript.setRefreshCheckDelay(1000);
+        refreshableScript.setRefreshCheckDelay(TimeUnit.SECONDS.toMillis(1));
 
         return refreshableScript;
     }

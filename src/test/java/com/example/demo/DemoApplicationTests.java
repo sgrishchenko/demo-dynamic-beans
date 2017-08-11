@@ -1,7 +1,7 @@
 package com.example.demo;
 
+import com.example.demo.lookup.LookupContainer;
 import com.example.demo.script.ScriptContainer;
-import com.example.demo.script.ScriptExample;
 import com.example.demo.swap.SwapContainer;
 import com.example.demo.swap.SwapExample;
 import org.junit.Test;
@@ -11,13 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.io.Resource;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.io.File;
+import javax.jms.Session;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -39,6 +38,11 @@ public class DemoApplicationTests {
     private ScriptContainer scriptContainer;
     @Value("classpath:GroovyImplementation.groovy")
     private Path path;
+
+    @Autowired
+    private LookupContainer lookupContainer;
+    @Autowired
+    private JmsTemplate jmsTemplate;
 
     @Test
     public void contextLoads() {
@@ -63,5 +67,14 @@ public class DemoApplicationTests {
                 .getBytes());
         TimeUnit.SECONDS.sleep(2);
         scriptContainer.doSomething();
+    }
+
+    @Test
+    public void lookup() throws Exception {
+        lookupContainer.doSomething();
+        lookupContainer.doSomething();
+        jmsTemplate.send("invalidateLookupProxies", Session::createMessage);
+        lookupContainer.doSomething();
+        lookupContainer.doSomething();
     }
 }
