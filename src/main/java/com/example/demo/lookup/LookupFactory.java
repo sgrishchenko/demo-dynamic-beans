@@ -3,13 +3,15 @@ package com.example.demo.lookup;
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.jms.annotation.JmsListener;
+import org.springframework.jmx.export.annotation.ManagedOperation;
+import org.springframework.jmx.export.annotation.ManagedResource;
 import org.springframework.stereotype.Component;
 
 /**
  * Created by sigri on 10.08.2017.
  */
 @Component
+@ManagedResource
 public abstract class LookupFactory {
     @Lookup("prototypeImplementation")
     public abstract LookupExample lookupProxy();
@@ -19,8 +21,8 @@ public abstract class LookupFactory {
         return lookupProxy();
     }
 
-    @JmsListener(destination = "invalidateLookupProxies")
+    @ManagedOperation
     @CacheEvict("lookupProxies")
-    public void invalidateLookupProxiesByJms() {
+    public void invalidateLookupProxies() {
     }
 }

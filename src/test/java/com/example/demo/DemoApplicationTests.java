@@ -11,17 +11,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.jms.Session;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = RANDOM_PORT, properties = "spring.jmx.enabled=true")
 public class DemoApplicationTests {
     @Autowired
     private HotSwappableTargetSource hotSwappable;
@@ -43,6 +50,8 @@ public class DemoApplicationTests {
     private LookupContainer lookupContainer;
     @Autowired
     private JmsTemplate jmsTemplate;
+    @Autowired
+    private TestRestTemplate restTemplate;
 
     @Test
     public void contextLoads() {
@@ -73,7 +82,19 @@ public class DemoApplicationTests {
     public void lookup() throws Exception {
         lookupContainer.doSomething();
         lookupContainer.doSomething();
-        jmsTemplate.send("invalidateLookupProxies", Session::createMessage);
+
+        jmsTemplate.sendAndReceive("invalidateLookupProxies", Session::createMessage);
+
+        lookupContainer.doSomething();
+        lookupContainer.doSomething();
+
+        Map<String, String> request = Collections.unmodifiableMap(Stream.of(
+                new SimpleEntry<>("type", "exec"),
+                new SimpleEntry<>("mbean", "com.example.demo.lookup:name=lookupFactory,type=LookupFactory"),
+                new SimpleEntry<>("operation", "invalidateLookupProxies()")
+        ).collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue)));
+        restTemplate.postForObject("/jolokia", request, String.class);
+
         lookupContainer.doSomething();
         lookupContainer.doSomething();
     }

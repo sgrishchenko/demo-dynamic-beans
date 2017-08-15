@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Configuration
 public class ScriptConfiguration {
-    @Value("GroovyImplementation.groovy")
+    @Value("classpath:GroovyImplementation.groovy")
     private Resource resource;
 
     @Bean
