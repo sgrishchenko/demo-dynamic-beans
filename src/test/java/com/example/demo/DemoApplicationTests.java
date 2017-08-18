@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import com.example.demo.context.ContextContainer;
 import com.example.demo.lookup.LookupContainer;
 import com.example.demo.script.ScriptContainer;
 import com.example.demo.swap.SwapContainer;
@@ -8,10 +9,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.aop.target.HotSwappableTargetSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.GenericGroovyApplicationContext;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -52,6 +57,11 @@ public class DemoApplicationTests {
     private JmsTemplate jmsTemplate;
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @Autowired
+    private ContextContainer contextContainer;
+    @Autowired
+    private ConfigurableApplicationContext context;
 
     @Test
     public void contextLoads() {
@@ -98,4 +108,23 @@ public class DemoApplicationTests {
         lookupContainer.doSomething();
         lookupContainer.doSomething();
     }
+
+    @Test
+    public void context() throws Exception {
+        contextContainer.doSomething();
+
+        GenericGroovyApplicationContext dynamicContext
+                = new GenericGroovyApplicationContext("classpath:dynamicContext.groovy");
+        DefaultListableBeanFactory factory = (DefaultListableBeanFactory) context.getBeanFactory();
+
+        Stream.of(dynamicContext.getBeanDefinitionNames()).forEach(name ->
+                factory.registerBeanDefinition(name, dynamicContext.getBeanDefinition(name)));
+
+        AutowiredAnnotationBeanPostProcessor postProcessor = new AutowiredAnnotationBeanPostProcessor();
+        postProcessor.setBeanFactory(context.getAutowireCapableBeanFactory());
+        postProcessor.processInjection(contextContainer);
+
+        contextContainer.doSomething();
+    }
+
 }
